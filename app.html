@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Cleaner App | Raven Sharp</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05050d; --surface: #0e0e1f; --surface-hover: #171732; --border: #23234d;
+    --text: #f4f4ff; --muted: #9ba3d9; --dim: #6066a6;
+    --purple: #7c5cbf; --purple-glow: #a78bfa; --gold: #ffc857; --danger: #ff4d6d; --success: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', system-ui, sans-serif; min-height: 100vh; }
+  .hidden { display: none !important; }
+  h1, h2, h3 { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; }
+  input, button, select { font-family: inherit; font-size: 0.95rem; }
+  input {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 11px 14px; border-radius: 10px; width: 100%; outline: none;
+  }
+  input:focus { border-color: var(--purple); }
+  button {
+    background: var(--purple); color: #fff; border: none; padding: 11px 20px;
+    border-radius: 10px; font-weight: 600; cursor: pointer; transition: background .2s;
+  }
+  button:hover { background: var(--purple-glow); }
+  button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  button.ghost:hover { border-color: var(--purple); background: var(--surface); }
+  button.danger { background: var(--danger); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Auth screen ── */
+  #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; width: 100%; max-width: 380px; }
+  .auth-card img { width: 42px; height: 42px; border-radius: 10px; margin-bottom: 16px; }
+  .auth-card h1 { font-size: 1.5rem; margin-bottom: 6px; }
+  .auth-card p.sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .auth-toggle { text-align: center; margin-top: 18px; font-size: 0.85rem; color: var(--muted); }
+  .auth-toggle a { color: var(--purple-glow); cursor: pointer; text-decoration: underline; }
+  .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; }
+
+  /* ── App shell ── */
+  #app-screen { display: none; }
+  #app-screen.active { display: block; }
+  nav.topbar {
+    display: flex; align-items: center; justify-content: space-between; padding: 16px 24px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  nav.topbar .brand { display: flex; align-items: center; gap: 10px; }
+  nav.topbar .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  nav.topbar .brand span { font-weight: 700; }
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .stat-card .num { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--purple-glow); }
+  .stat-card .label { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+
+  section.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+  section.panel h2 { font-size: 1.05rem; margin-bottom: 16px; }
+  .source-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .source-row:last-child { border-bottom: none; }
+  .source-row .meta { font-size: 0.88rem; color: var(--muted); }
+  .badge { display: inline-block; background: rgba(124,92,191,.15); color: var(--purple-glow); font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; margin-right: 8px; }
+
+  .group-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .group-card .kind { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+  .group-card .reason { color: var(--muted); font-size: 0.87rem; margin: 8px 0 12px; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 0.88rem; }
+  .file-item.keep { color: var(--success); font-weight: 600; }
+  .file-item.discard { color: var(--dim); text-decoration: line-through; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--dim); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--purple); padding: 12px 22px; border-radius: 12px; font-size: 0.88rem; z-index: 999; }
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <img src="/brands/ravenSharpLogo.png" alt="Raven Sharp">
+    <h1 id="auth-title">Welcome back</h1>
+    <p class="sub" id="auth-sub">Log in to Smart Cleaner</p>
+
+    <div class="field" id="name-field" style="display:none">
+      <label>Full name</label>
+      <input type="text" id="signup-name" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••">
+    </div>
+    <button id="auth-submit" style="width:100%">Log In</button>
+    <p class="error-msg hidden" id="auth-error"></p>
+    <p class="auth-toggle">
+      <span id="toggle-to-signup">Don't have an account? <a onclick="setAuthMode('signup')">Sign up</a></span>
+      <span id="toggle-to-login" class="hidden">Already have an account? <a onclick="setAuthMode('login')">Log in</a></span>
+    </p>
+  </div>
+</div>
+
+<!-- ═══ APP SCREEN ═══ -->
+<div id="app-screen">
+  <nav class="topbar">
+    <div class="brand"><img src="/brands/ravenSharpLogo.png" alt=""><span>Smart Cleaner</span></div>
+    <button class="ghost" onclick="logout()">Log Out</button>
+  </nav>
+
+  <main>
+    <div class="stat-grid" id="stats-grid"></div>
+
+    <section class="panel">
+      <h2>Connected Sources</h2>
+      <div id="sources-list"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="ghost" onclick="showConnectForm('gdrive')">+ Google Drive</button>
+        <button class="ghost" onclick="showConnectForm('dropbox')">+ Dropbox</button>
+      </div>
+      <div id="connect-form" class="hidden" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">
+          Paste an access token for this account. (OAuth "Connect" buttons are coming soon — for now, generate a token via your source's developer console.)
+        </p>
+        <div class="field"><input type="text" id="connect-token" placeholder="Access token"></div>
+        <div class="field"><input type="text" id="connect-label" placeholder="Label (e.g. My Work Drive)"></div>
+        <button onclick="submitConnect()">Connect</button>
+        <button class="ghost" onclick="hideConnectForm()">Cancel</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Scan</h2>
+      <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px">
+        Scans every connected source, finds duplicates by looking at actual content (not just filenames), and suggests better names for generic files.
+      </p>
+      <button id="scan-btn" onclick="runScan()">Scan All Sources</button>
+      <span id="scan-status" style="margin-left:12px;color:var(--muted);font-size:0.88rem"></span>
+    </section>
+
+    <section class="panel">
+      <h2>Duplicate Groups</h2>
+      <div id="groups-list"><div class="empty-state">Run a scan to find duplicates.</div></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const API_BASE = (window.SMART_CLEANER_API_URL || "https://YOUR-SMART-CLEANER-BACKEND.up.railway.app") + "/api";
+let authMode = "login";
+let token = localStorage.getItem("sc_token");
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  setTimeout(() => el.classList.add("hidden"), 3500);
+}
+
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  if (res.status === 401) { logout(); throw new Error("Session expired — please log in again"); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
+  return data;
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  document.getElementById("auth-title").textContent = mode === "login" ? "Welcome back" : "Create your account";
+  document.getElementById("auth-sub").textContent = mode === "login" ? "Log in to Smart Cleaner" : "Get started with Smart Cleaner";
+  document.getElementById("auth-submit").textContent = mode === "login" ? "Log In" : "Sign Up";
+  document.getElementById("name-field").style.display = mode === "signup" ? "block" : "none";
+  document.getElementById("toggle-to-signup").classList.toggle("hidden", mode === "signup");
+  document.getElementById("toggle-to-login").classList.toggle("hidden", mode === "login");
+  document.getElementById("auth-error").classList.add("hidden");
+}
+
+document.getElementById("auth-submit").addEventListener("click", async () => {
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+  const errorEl = document.getElementById("auth-error");
+  errorEl.classList.add("hidden");
+  try {
+    let data;
+    if (authMode === "login") {
+      data = await api("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    } else {
+      const full_name = document.getElementById("signup-name").value.trim();
+      data = await api("/auth/signup", { method: "POST", body: JSON.stringify({ email, password, full_name }) });
+    }
+    token = data.access_token;
+    localStorage.setItem("sc_token", token);
+    showApp();
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.classList.remove("hidden");
+  }
+});
+
+function logout() {
+  token = null;
+  localStorage.removeItem("sc_token");
+  document.getElementById("app-screen").classList.remove("active");
+  document.getElementById("auth-screen").style.display = "flex";
+}
+
+async function showApp() {
+  document.getElementById("auth-screen").style.display = "none";
+  document.getElementById("app-screen").classList.add("active");
+  await Promise.all([loadStats(), loadSources()]);
+}
+
+async function loadStats() {
+  try {
+    const s = await api("/dashboard/stats");
+    document.getElementById("stats-grid").innerHTML = `
+      <div class="stat-card"><div class="num">${s.total_files}</div><div class="label">Total Files</div></div>
+      <div class="stat-card"><div class="num">${s.sources_count}</div><div class="label">Connected Sources</div></div>
+      <div class="stat-card"><div class="num">${s.duplicate_groups_count}</div><div class="label">Duplicate Groups</div></div>
+      <div class="stat-card"><div class="num">${fmtBytes(s.space_recoverable)}</div><div class="label">Recoverable Space</div></div>
+    `;
+  } catch (e) { toast(e.message); }
+}
+
+function fmtBytes(n) {
+  if (!n) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(1)} ${units[i]}`;
+}
+
+let pendingConnectType = null;
+function showConnectForm(type) {
+  pendingConnectType = type;
+  document.getElementById("connect-form").classList.remove("hidden");
+  document.getElementById("connect-label").value = type === "gdrive" ? "My Drive" : "My Dropbox";
+}
+function hideConnectForm() {
+  document.getElementById("connect-form").classList.add("hidden");
+  document.getElementById("connect-token").value = "";
+}
+async function submitConnect() {
+  const access_token = document.getElementById("connect-token").value.trim();
+  const account_label = document.getElementById("connect-label").value.trim();
+  if (!access_token) { toast("Paste an access token first"); return; }
+  try {
+    await api(`/sources/${pendingConnectType}`, { method: "POST", body: JSON.stringify({ access_token, account_label }) });
+    toast("Connected");
+    hideConnectForm();
+    await loadSources();
+  } catch (e) { toast(e.message); }
+}
+
+async function loadSources() {
+  try {
+    const sources = await api("/sources");
+    const el = document.getElementById("sources-list");
+    if (!sources.length) {
+      el.innerHTML = `<div class="empty-state">No sources connected yet.</div>`;
+      return;
+    }
+    el.innerHTML = sources.map(s => `
+      <div class="source-row">
+        <div><span class="badge">${s.type}</span>${s.label}</div>
+        <button class="ghost" onclick="disconnectSource('${s.id}')">Remove</button>
+      </div>
+    `).join("");
+  } catch (e) { toast(e.message); }
+}
+
+async function disconnectSource(id) {
+  try {
+    await api(`/sources/${id}`, { method: "DELETE" });
+    toast("Source removed");
+    await loadSources();
+  } catch (e) { toast(e.message); }
+}
+
+async function runScan() {
+  const btn = document.getElementById("scan-btn");
+  const status = document.getElementById("scan-status");
+  btn.disabled = true;
+  try {
+    const sources = await api("/sources");
+    for (const s of sources) {
+      if (s.type !== "gdrive" && s.type !== "dropbox") continue; // onedrive/gphotos scan endpoints not built yet
+      status.textContent = `Scanning ${s.label}...`;
+      await api(`/scan/${s.type}/${s.id}`, { method: "POST" });
+    }
+    status.textContent = "Analyzing for duplicates...";
+    const result = await api("/scan/analyze", { method: "POST" });
+    renderGroups(result.duplicate_groups || []);
+    status.textContent = "Done";
+    await loadStats();
+    setTimeout(() => status.textContent = "", 3000);
+  } catch (e) {
+    toast(e.message);
+    status.textContent = "";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderGroups(groups) {
+  const el = document.getElementById("groups-list");
+  if (!groups.length) {
+    el.innerHTML = `<div class="empty-state">No duplicates found. Your files are clean.</div>`;
+    return;
+  }
+  el.innerHTML = groups.map(g => `
+    <div class="group-card">
+      <div class="kind">${g.kind.replace(/_/g, " ")}</div>
+      <div class="reason">${g.reason || ""}</div>
+      ${g.files.map(f => `
+        <div class="file-item ${f.id === g.keep_id ? 'keep' : 'discard'}">
+          <span>${f.id === g.keep_id ? '✓ KEEP — ' : '✗ '}${f.name}</span>
+          <span>${fmtBytes(f.size)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+}
+
+// Restore session on load
+if (token) { showApp(); } else { setAuthMode("login"); }
+</script>
+</body>
+</html>
