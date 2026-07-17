@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Cleaner — AI File & Photo Duplicate Cleaner | Raven Sharp</title>
+<meta name="description" content="Smart Cleaner finds duplicate files and photos by actually looking inside them — not just matching filenames. Connects to Google Drive, Dropbox, and your device.">
+<link rel="canonical" href="https://cleaner.raven-sharp.com/">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05050d; --surface: #0e0e1f; --surface-hover: #171732;
+    --border: #23234d; --text: #f4f4ff; --muted: #9ba3d9; --dim: #6066a6;
+    --purple: #7c5cbf; --purple-glow: #a78bfa; --gold: #ffc857;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(ellipse at top, #0d0a1a 0%, #05050d 60%);
+    color: var(--text); font-family: 'Outfit', system-ui, sans-serif;
+    min-height: 100vh; line-height: 1.6;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 28px 0; display: flex; align-items: center; gap: 12px; }
+  header img { width: 36px; height: 36px; border-radius: 9px; }
+  header span { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-weight: 700; color: var(--muted); font-size: 1rem; }
+  header a { text-decoration: none; display: flex; align-items: center; gap: 12px; }
+
+  .hero { text-align: center; padding: 56px 0 40px; }
+  .hero .badge {
+    display: inline-block; background: rgba(124,92,191,.15); border: 1px solid rgba(124,92,191,.3);
+    color: var(--purple-glow); font-size: 0.78rem; font-weight: 600; padding: 6px 14px;
+    border-radius: 999px; margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-weight: 900;
+    font-size: clamp(2.2rem, 5.5vw, 3.4rem); letter-spacing: -1.2px; line-height: 1.08;
+  }
+  .hero h1 span { color: var(--purple-glow); }
+  .hero p.lead { color: var(--muted); font-size: 1.1rem; max-width: 560px; margin: 20px auto 0; }
+  .cta-row { display: flex; gap: 12px; justify-content: center; margin-top: 32px; flex-wrap: wrap; }
+  .btn {
+    padding: 13px 26px; border-radius: 12px; font-weight: 700; font-size: 0.95rem;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-primary { background: var(--purple); color: #fff; }
+  .btn-primary:hover { background: var(--purple-glow); }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--purple); }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 50px 0; }
+  .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .feature .icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+  .feature h3 { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-size: 1.02rem; font-weight: 700; margin-bottom: 6px; }
+  .feature p { color: var(--muted); font-size: 0.88rem; }
+
+  .sources { text-align: center; padding: 20px 0 60px; }
+  .sources h2 { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-size: 1.3rem; margin-bottom: 20px; }
+  .source-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .pill { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 8px 18px; font-size: 0.88rem; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 0; text-align: center; color: var(--dim); font-size: 0.85rem; }
+  footer a { color: var(--muted); text-decoration: underline; margin: 0 8px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="https://raven-sharp.com">
+      <img src="/brands/ravenSharpLogo.png" alt="Raven Sharp">
+      <span>Raven Sharp</span>
+    </a>
+  </header>
+
+  <section class="hero">
+    <span class="badge">Part of the Raven Sharp suite</span>
+    <h1>Stop hunting for<br><span>duplicate files</span> by hand.</h1>
+    <p class="lead">Smart Cleaner actually looks inside your files and photos — not just filenames — to find drafts, old versions, and duplicate images, then keeps only the best copy.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#get-app">Get the App</a>
+      <a class="btn btn-ghost" href="https://raven-sharp.com">Explore the Suite</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <span class="icon">🔍</span>
+      <h3>Reads content, not just names</h3>
+      <p>Finds duplicate photos even when resized or recompressed, and near-identical drafts of documents — not just exact filename matches.</p>
+    </div>
+    <div class="feature">
+      <span class="icon">🤖</span>
+      <h3>AI picks the best version</h3>
+      <p>When it finds a group of similar files, Claude Vision decides which one is genuinely the most complete — not just the newest or largest.</p>
+    </div>
+    <div class="feature">
+      <span class="icon">✏️</span>
+      <h3>Fixes bad filenames too</h3>
+      <p>"IMG_4821.jpg" becomes a real, descriptive name based on what's actually in the photo or document.</p>
+    </div>
+    <div class="feature">
+      <span class="icon">🗂️</span>
+      <h3>One place for everything</h3>
+      <p>Scan Google Drive, Dropbox, and your device's photos and files together, instead of cleaning each source separately.</p>
+    </div>
+  </section>
+
+  <section class="sources">
+    <h2>Connects to where your files actually live</h2>
+    <div class="source-pills">
+      <span class="pill">Google Drive</span>
+      <span class="pill">Dropbox</span>
+      <span class="pill">Device Photos</span>
+      <span class="pill">Device Files</span>
+    </div>
+  </section>
+
+  <section id="get-app" class="hero" style="padding:20px 0 70px">
+    <h1 style="font-size:1.8rem">Get Smart Cleaner</h1>
+    <p class="lead">Available soon on iOS and Android.</p>
+  </section>
+
+  <footer>
+    <p>
+      <a href="https://raven-sharp.com">Raven Sharp</a> ·
+      <a href="https://ascensiondigitalgroup.com" target="_blank" rel="noopener">Ascension Digital Group</a>
+    </p>
+    <p style="margin-top:8px">&copy; 2026 Raven Sharp</p>
+  </footer>
+</div>
+
+</body>
+</html>
