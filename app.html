@@ -123,13 +123,21 @@
       <h2>Connected Sources</h2>
       <div id="sources-list"></div>
       <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
-        <button class="ghost" onclick="showConnectForm('gdrive')">+ Google Drive</button>
-        <button class="ghost" onclick="showConnectForm('dropbox')">+ Dropbox</button>
+        <button onclick="connectGoogleDrive()">Connect Google Drive</button>
+        <button onclick="connectDropbox()">Connect Dropbox</button>
+        <button class="ghost" onclick="showConnectForm('gdrive')">Paste token instead</button>
       </div>
       <div id="connect-form" class="hidden" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">
-          Paste an access token for this account. (OAuth "Connect" buttons are coming soon — for now, generate a token via your source's developer console.)
+          Manual token entry — a fallback if OAuth isn't working for you right now.
         </p>
+        <div class="field">
+          <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:6px">Source type</label>
+          <select id="connect-type" style="width:100%;padding:11px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text)">
+            <option value="gdrive">Google Drive</option>
+            <option value="dropbox">Dropbox</option>
+          </select>
+        </div>
         <div class="field"><input type="text" id="connect-token" placeholder="Access token"></div>
         <div class="field"><input type="text" id="connect-label" placeholder="Label (e.g. My Work Drive)"></div>
         <button onclick="submitConnect()">Connect</button>
@@ -243,10 +251,68 @@ function fmtBytes(n) {
   return `${n.toFixed(1)} ${units[i]}`;
 }
 
-let pendingConnectType = null;
+// ── OAuth config — fill these in once registered ──
+// Google: console.cloud.google.com/apis/credentials -> Web application client
+const GOOGLE_CLIENT_ID = window.SMART_CLEANER_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com";
+// Dropbox: dropbox.com/developers/apps -> App key
+const DROPBOX_APP_KEY = window.SMART_CLEANER_DROPBOX_APP_KEY || "YOUR_DROPBOX_APP_KEY";
+
+function connectGoogleDrive() {
+  if (GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+    toast("Google OAuth not configured yet — use 'Paste token instead' for now");
+    return;
+  }
+  const redirectUri = window.location.origin + window.location.pathname;
+  const scope = "https://www.googleapis.com/auth/drive.readonly";
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token` +
+    `&scope=${encodeURIComponent(scope)}&prompt=consent&state=gdrive`;
+  window.location.href = url;
+}
+
+function connectDropbox() {
+  if (DROPBOX_APP_KEY.startsWith("YOUR_")) {
+    toast("Dropbox OAuth not configured yet — use 'Paste token instead' for now");
+    return;
+  }
+  const redirectUri = window.location.origin + window.location.pathname;
+  const url = `https://www.dropbox.com/oauth2/authorize?client_id=${encodeURIComponent(DROPBOX_APP_KEY)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&state=dropbox`;
+  window.location.href = url;
+}
+
+// Both providers return the token in the URL fragment (#access_token=...&state=...)
+// after redirecting back here — this is the OAuth "implicit" flow, which needs
+// no backend involvement since this is a static site with no server of its own.
+// Trade-off: no refresh token, so the connection needs re-authorizing once the
+// access token expires (~1hr for Google, longer for Dropbox) — acceptable for
+// now, upgradeable to a proper server-side flow later if that becomes a problem.
+async function handleOAuthCallback() {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return;
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get("access_token");
+  const state = params.get("state");
+  if (!accessToken || !state) return;
+
+  history.replaceState(null, "", window.location.pathname + window.location.search);
+
+  if (!token) {
+    toast("Please log in first, then reconnect this source");
+    return;
+  }
+  try {
+    const sourceType = state === "gdrive" ? "gdrive" : "dropbox";
+    const label = sourceType === "gdrive" ? "My Drive" : "My Dropbox";
+    await api(`/sources/${sourceType}`, { method: "POST", body: JSON.stringify({ access_token: accessToken, account_label: label }) });
+    toast(`${label} connected`);
+    await loadSources();
+  } catch (e) { toast(e.message); }
+}
+
 function showConnectForm(type) {
-  pendingConnectType = type;
   document.getElementById("connect-form").classList.remove("hidden");
+  document.getElementById("connect-type").value = type;
   document.getElementById("connect-label").value = type === "gdrive" ? "My Drive" : "My Dropbox";
 }
 function hideConnectForm() {
@@ -254,11 +320,12 @@ function hideConnectForm() {
   document.getElementById("connect-token").value = "";
 }
 async function submitConnect() {
+  const type = document.getElementById("connect-type").value;
   const access_token = document.getElementById("connect-token").value.trim();
   const account_label = document.getElementById("connect-label").value.trim();
   if (!access_token) { toast("Paste an access token first"); return; }
   try {
-    await api(`/sources/${pendingConnectType}`, { method: "POST", body: JSON.stringify({ access_token, account_label }) });
+    await api(`/sources/${type}`, { method: "POST", body: JSON.stringify({ access_token, account_label }) });
     toast("Connected");
     hideConnectForm();
     await loadSources();
@@ -335,8 +402,8 @@ function renderGroups(groups) {
   `).join("");
 }
 
-// Restore session on load
-if (token) { showApp(); } else { setAuthMode("login"); }
+// Restore session on load, then process any OAuth redirect callback
+if (token) { showApp().then(handleOAuthCallback); } else { setAuthMode("login"); handleOAuthCallback(); }
 </script>
 </body>
 </html>
