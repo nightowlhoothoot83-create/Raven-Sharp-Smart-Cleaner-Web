@@ -28,8 +28,8 @@
 
   .hero { text-align: center; padding: 56px 0 40px; }
   .hero .badge {
-    display: inline-block; background: rgba(124,92,191,.15); border: 1px solid rgba(124,92,191,.3);
-    color: var(--purple-glow); font-size: 0.78rem; font-weight: 600; padding: 6px 14px;
+    display: inline-block; background: rgba(255,200,87,.08); border: 1px solid rgba(255,200,87,.28);
+    color: var(--gold); font-size: 0.78rem; font-weight: 600; padding: 6px 14px;
     border-radius: 999px; margin-bottom: 20px;
   }
   .hero h1 {
@@ -49,7 +49,8 @@
   .btn-ghost:hover { border-color: var(--purple); }
 
   .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 50px 0; }
-  .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; transition: all 0.25s ease; }
+  .feature:hover { border-color: rgba(124,92,191,0.45); box-shadow: 0 14px 34px rgba(124,92,191,0.16); transform: translateY(-2px); }
   .feature .icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
   .feature h3 { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-size: 1.02rem; font-weight: 700; margin-bottom: 6px; }
   .feature p { color: var(--muted); font-size: 0.88rem; }
@@ -82,7 +83,7 @@
   </header>
 
   <section class="hero">
-    <span class="badge">Part of the Raven Sharp suite</span>
+    <span class="badge">✦ Part of the Raven Sharp suite</span>
     <h1>Stop hunting for<br><span>duplicate files</span> by hand.</h1>
     <p class="lead">Smart Cleaner actually looks inside your files and photos — not just filenames — to find drafts, old versions, and duplicate images, then keeps only the best copy.</p>
     <div class="cta-row">
