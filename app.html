@@ -33,7 +33,16 @@
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── Auth screen ── */
-  #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px; background:radial-gradient(circle at 20% 20%,rgba(124,92,191,.2),transparent 34%),radial-gradient(circle at 85% 20%,rgba(56,189,248,.12),transparent 30%); }
+  .auth-shell { width:min(980px,100%); display:grid; grid-template-columns:1.08fr .92fr; gap:28px; align-items:center; }
+  .auth-intro { padding:34px; }
+  .auth-intro .eyebrow { color:var(--gold); font:500 12px/1.4 'DM Mono',monospace; letter-spacing:.18em; text-transform:uppercase; }
+  .auth-intro h1 { font-size:clamp(2.6rem,6vw,4.5rem); line-height:.94; letter-spacing:-.055em; margin:16px 0 20px; }
+  .auth-intro h1 span { background:linear-gradient(90deg,var(--purple-glow),var(--gold),#38bdf8); background-clip:text; color:transparent; }
+  .auth-intro p { color:var(--muted); font-size:1.05rem; max-width:560px; }
+  .auth-benefits { display:grid; gap:10px; margin-top:24px; color:#c4c8ea; font-size:.9rem; }
+  .auth-links { margin-top:24px; display:flex; flex-wrap:wrap; gap:14px; font-size:.78rem; }
+  .auth-links a { color:var(--purple-glow); }
   .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; width: 100%; max-width: 380px; }
   .auth-card img { width: 42px; height: 42px; border-radius: 10px; margin-bottom: 16px; }
   .auth-card h1 { font-size: 1.5rem; margin-bottom: 6px; }
@@ -43,6 +52,7 @@
   .auth-toggle { text-align: center; margin-top: 18px; font-size: 0.85rem; color: var(--muted); }
   .auth-toggle a { color: var(--purple-glow); cursor: pointer; text-decoration: underline; }
   .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; }
+  @media(max-width:760px){.auth-shell{grid-template-columns:1fr}.auth-intro{padding:12px 8px 0;text-align:center}.auth-benefits{display:none}.auth-links{justify-content:center}.auth-card{margin:auto}.auth-intro h1{font-size:2.8rem}}
 
   /* ── App shell ── */
   #app-screen { display: none; }
@@ -83,6 +93,14 @@
 
 <!-- ═══ AUTH SCREEN ═══ -->
 <div id="auth-screen">
+  <div class="auth-shell">
+  <section class="auth-intro" aria-labelledby="cleaner-auth-heading">
+    <span class="eyebrow">Raven Sharp Smart Cleaner</span>
+    <h1 id="cleaner-auth-heading">Review duplicates.<br><span>Keep the right file.</span></h1>
+    <p>Compare matching files by content and quality, approve every cleanup decision, and keep Google Drive, Dropbox and device files organised from one workspace.</p>
+    <div class="auth-benefits"><span>✓ Content-aware duplicate groups</span><span>✓ Quality and version comparison</span><span>✓ Approval required before deletion or renaming</span></div>
+    <nav class="auth-links" aria-label="Product and legal links"><a href="/">Features &amp; pricing</a><a href="/legal/privacy">Privacy</a><a href="/legal/terms">Terms</a><a href="/legal/cookies">Cookies</a><a href="https://raven-sharp.com">Raven Sharp suite</a></nav>
+  </section>
   <div class="auth-card">
     <img src="/brands/ravenSharpLogo.png" alt="Raven Sharp">
     <h1 id="auth-title">Welcome back</h1>
@@ -106,6 +124,7 @@
       <span id="toggle-to-signup">Don't have an account? <a onclick="setAuthMode('signup')">Sign up</a></span>
       <span id="toggle-to-login" class="hidden">Already have an account? <a onclick="setAuthMode('login')">Log in</a></span>
     </p>
+  </div>
   </div>
 </div>
 

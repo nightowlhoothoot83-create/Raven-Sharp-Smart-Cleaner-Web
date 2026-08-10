@@ -21,10 +21,13 @@
     min-height: 100vh; line-height: 1.6;
   }
   .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-  header { padding: 28px 0; display: flex; align-items: center; gap: 12px; }
-  header img { width: 36px; height: 36px; border-radius: 9px; }
-  header span { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-weight: 700; color: var(--muted); font-size: 1rem; }
+  header { min-height: 72px; padding: 12px 0; display: flex; align-items: center; gap: 14px; }
+  header img { width: 46px; height: 46px; border-radius: 10px; object-fit: contain; }
+  header span { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-weight: 800; color: var(--text); font-size: 1rem; }
   header a { text-decoration: none; display: flex; align-items: center; gap: 12px; }
+  header nav { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  header nav a { color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: .86rem; font-weight: 700; }
+  header nav a:last-child { border: 0; background: linear-gradient(135deg,var(--purple),var(--blue)); }
 
   .hero { text-align: center; padding: 56px 0 40px; }
   .hero .badge {
@@ -79,7 +82,7 @@
   <header>
     <a href="https://raven-sharp.com">
       <img src="/brands/ravenSharpLogo.png" alt="Raven Sharp">
-      <span>Raven Sharp</span>
+      <span>Raven Sharp <small style="display:block;color:var(--muted);font:500 10px/1.2 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase">Smart Cleaner</small></span>
     </a><nav aria-label="Account"><a href="/app.html#login">Sign In</a><a href="/app.html#register">Create Account</a></nav>
   </header>
 
@@ -126,7 +129,7 @@
     </div>
   </section>
 
-  <section class="output-preview" aria-labelledby="cleaner-output-title"><div class="cleaner-ui"><p style="font-size:12px;color:var(--purple-glow);letter-spacing:.12em">DUPLICATE GROUP · REVIEW REQUIRED</p><div class="cleaner-row"><div class="file-thumb">🖼️</div><div><b>family-beach-original.jpg</b><br><small style="color:var(--muted)">4032 × 3024 · sharpest original</small></div><span class="keep">KEEP</span></div><div class="cleaner-row"><div class="file-thumb" style="opacity:.55">🖼️</div><div><b>IMG_4821-copy.jpg</b><br><small style="color:var(--muted)">1080 × 810 · recompressed copy</small></div><span class="remove">REVIEW</span></div><div class="cleaner-row"><div class="file-thumb">📄</div><div><b>Q3-client-proposal-final.pdf</b><br><small style="color:var(--muted)">Suggested descriptive filename</small></div><span class="keep">RENAME</span></div></div><div><span class="badge">EXAMPLE OUTPUT</span><h2 id="cleaner-output-title">See the best copy before anything changes.</h2><p class="lead" style="margin:0">Smart Cleaner groups matching content, explains which file is strongest and suggests clearer names. You approve every delete or rename—nothing disappears automatically.</p></div></section>
+<section class="output-preview" aria-labelledby="cleaner-output-title"><figure class="cleaner-ui" style="margin:0;padding:12px"><img src="/product-preview.svg" alt="Smart Cleaner duplicate review comparing file quality before an approved cleanup action" style="display:block;width:100%;height:auto;border-radius:14px"><figcaption style="position:absolute;left:-9999px">Illustrative example of the review-before-cleanup workflow.</figcaption></figure><div><span class="badge">EXAMPLE OUTPUT</span><h2 id="cleaner-output-title">See the best copy before anything changes.</h2><p class="lead" style="margin:0">Smart Cleaner groups matching content, explains which file is strongest and suggests clearer names. You approve every delete or rename—nothing disappears automatically.</p></div></section>
 
   <section id="pricing" class="pricing"><h2>Simple plans for cleaner storage.</h2><p class="pricing-intro">Prices in AUD. Start free, cancel anytime and keep final control over every action.</p><div class="plans" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));max-width:760px;margin:auto"><article class="plan"><span class="badge">FREE</span><div class="price">$0</div><p>For a first cleanup.</p><ul><li>1 connected source</li><li>500 files scanned/month</li><li>Exact duplicate matching</li><li>Manual review queue</li></ul><a class="btn btn-ghost" href="/app.html#register">Start free</a></article><article class="plan popular"><span class="badge">PRO · POPULAR</span><div class="price">$9<small>/month</small></div><p>For ongoing personal cleanup.</p><ul><li>4 connected sources</li><li>25,000 files scanned/month</li><li>Visual near-duplicate detection</li><li>AI best-version recommendations</li><li>Smart filename suggestions</li></ul><a class="btn btn-primary" href="/app.html#register">Choose Pro</a></article></div></section>
 
