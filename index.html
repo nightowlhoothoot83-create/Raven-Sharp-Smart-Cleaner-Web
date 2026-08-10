@@ -21,9 +21,10 @@
     min-height: 100vh; line-height: 1.6;
   }
   .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-  header { min-height: 72px; padding: 12px 0; display: flex; align-items: center; gap: 14px; }
-  header img { width: 46px; height: 46px; border-radius: 10px; object-fit: contain; }
-  header span { font-family: 'Cabinet Grotesk', 'Outfit', sans-serif; font-weight: 800; color: var(--text); font-size: 1rem; }
+  header { min-height:64px; padding:0; display:flex; align-items:center; gap:14px; }
+  header img { width:36px; height:36px; border-radius:0; object-fit:contain; filter:drop-shadow(0 0 8px rgba(124,92,191,.4)); }
+  header span { font-family:'Cabinet Grotesk','Outfit',sans-serif; font-weight:900; color:var(--text); font-size:18px; letter-spacing:-.02em; line-height:1; }
+  header span strong{color:var(--purple-glow)}
   header a { text-decoration: none; display: flex; align-items: center; gap: 12px; }
   header nav { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   header nav a { color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: .86rem; font-weight: 700; }
@@ -82,8 +83,8 @@
   <header>
     <a href="https://raven-sharp.com">
       <img src="/brands/ravenSharpLogo.png" alt="Raven Sharp">
-      <span>Raven Sharp <small style="display:block;color:var(--muted);font:500 10px/1.2 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase">Smart Cleaner</small></span>
-    </a><nav aria-label="Account"><a href="/app.html#login">Sign In</a><a href="/app.html#register">Create Account</a></nav>
+      <span>RAVEN <strong>SHARP</strong><small style="display:block;margin-top:3px;color:var(--dim);font:500 9px/1 'DM Mono',monospace;letter-spacing:.2em;text-transform:uppercase">Smart Cleaner</small></span>
+    </a><nav aria-label="Account"><a href="/app.html#login">Sign In</a><a href="/app.html#register">Get Started</a></nav>
   </header>
 
   <section class="hero">
