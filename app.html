@@ -87,6 +87,12 @@
 
   .empty-state { text-align: center; padding: 40px 20px; color: var(--dim); }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--purple); padding: 12px 22px; border-radius: 12px; font-size: 0.88rem; z-index: 999; }
+
+/* Persistent approved Raven Sharp shell */
+nav.topbar{min-height:64px;padding:10px 24px;background:rgba(8,8,16,.94);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:30}
+nav.topbar .brand{display:flex;align-items:center;gap:12px}nav.topbar .brand img{width:44px;height:44px;border-radius:0;object-fit:contain;filter:drop-shadow(0 0 8px rgba(124,92,191,.4))}
+.rs-brand-lock{font-family:'Cabinet Grotesk','Outfit',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.025em;line-height:1}.rs-brand-lock strong{color:var(--purple-glow)}.rs-brand-lock small{display:block;margin-top:4px;font:500 9px/1 'DM Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#38bdf8}
+.rs-suite-link{margin-left:auto;color:var(--muted);text-decoration:none;font-size:12px;font-weight:700}.rs-suite-link:hover{color:#fff}.rs-top-actions{display:flex;align-items:center;gap:14px}@media(max-width:560px){.rs-suite-link{display:none}}
 </style>
 </head>
 <body>
@@ -131,8 +137,8 @@
 <!-- ═══ APP SCREEN ═══ -->
 <div id="app-screen">
   <nav class="topbar">
-    <div class="brand"><img src="/brands/ravenSharpLogo.png" alt=""><span>Smart Cleaner</span></div>
-    <button class="ghost" onclick="logout()">Log Out</button>
+    <div class="brand"><img src="/brands/ravenSharpLogo.png" alt="Raven Sharp"><div class="rs-brand-lock">RAVEN <strong>SHARP</strong><small>Smart Cleaner</small></div></div>
+    <div class="rs-top-actions"><a class="rs-suite-link" href="https://raven-sharp.com">Raven Sharp Suite</a><button class="ghost" onclick="logout()">Log Out</button></div>
   </nav>
 
   <main>
