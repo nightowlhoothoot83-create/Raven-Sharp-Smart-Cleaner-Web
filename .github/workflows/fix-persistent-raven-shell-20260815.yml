@@ -1,0 +1,38 @@
+name: Fix persistent Raven Sharp shell
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-persistent-raven-shell-20260815.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Patch auth and app shell
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('app.html'); s=p.read_text()
+          css='''\n/* Persistent approved Raven Sharp shell */\n.rs-persistent-top{position:fixed;top:0;left:0;right:0;z-index:100;min-height:64px;display:flex;align-items:center;padding:0 max(16px,calc((100vw - 1120px)/2));gap:12px;background:rgba(8,8,16,.9);border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(18px)}\n.rs-persistent-top img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(124,92,191,.4))}.rs-persistent-brand{font-family:'Cabinet Grotesk','Outfit',sans-serif;font-size:18px;font-weight:800;line-height:1}.rs-persistent-brand strong{color:var(--purple-glow)}.rs-persistent-brand small{display:block;margin-top:4px;font:500 9px/1 'DM Mono',monospace;letter-spacing:.2em;color:#38bdf8;text-transform:uppercase}\n#auth-screen{padding-top:92px!important}nav.topbar{min-height:64px!important;padding:10px 24px!important;background:rgba(8,8,16,.9)!important;backdrop-filter:blur(18px)}nav.topbar .brand img{width:44px!important;height:44px!important;border-radius:0!important;filter:drop-shadow(0 0 8px rgba(124,92,191,.4))}nav.topbar .brand span{font-family:'Cabinet Grotesk','Outfit',sans-serif;font-weight:800}nav.topbar .brand span:before{content:'RAVEN SHARP · ';color:var(--purple-glow)}\n.rs-cleaner-footer{padding:36px 20px 26px;text-align:center;border-top:1px solid rgba(255,255,255,.08);background:#0e0e1a;color:var(--muted);font-size:12px}.rs-cleaner-footer .suite{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px auto}.rs-cleaner-footer a{color:var(--muted);text-decoration:none}.rs-cleaner-footer .suite a:first-child{color:#38bdf8}\n@media(max-width:520px){.rs-persistent-brand{font-size:16px}.rs-persistent-top{padding-left:12px}.auth-card{padding:26px}}\n'''
+          if 'Persistent approved Raven Sharp shell' not in s: s=s.replace('</style>',css+'</style>',1)
+          if '<header class="rs-persistent-top">' not in s:
+              s=s.replace('<body>','<body>\n<header class="rs-persistent-top"><img src="/brands/ravenSharpLogo.png" alt="Raven Sharp"><div class="rs-persistent-brand">RAVEN <strong>SHARP</strong><small>Smart Cleaner</small></div></header>',1)
+          old='<footer style="padding:28px 20px;text-align:center;border-top:1px solid var(--border);background:#05070d;color:var(--dim);font-size:12px"><b style="display:block;color:var(--text);font-size:16px;margin-bottom:5px">Ascension Digital Group</b>Raven Sharp Smart Cleaner · <a href="/" style="color:var(--purple-glow)">Product, features &amp; pricing</a> · <a href="https://raven-sharp.com" style="color:var(--purple-glow)">Explore all Raven Sharp tools</a></footer>'
+          new='<footer class="rs-cleaner-footer"><b style="display:block;color:#fff;font-size:16px;margin-bottom:5px">Ascension Digital Group</b><div>Raven Sharp Smart Cleaner</div><nav class="suite" aria-label="Raven Sharp suite"><a href="https://raven-sharp.com">Raven Sharp Home</a><a href="https://pod.raven-sharp.com">POD Automation</a><a href="https://opt.raven-sharp.com">Image Optimiser</a><a href="https://books.raven-sharp.com">Book Creator</a><a href="https://content.raven-sharp.com">Content Creator</a><a href="https://ads.raven-sharp.com">Ad Manager</a><a href="https://cleaner.raven-sharp.com">Smart Cleaner</a></nav><div>© 2026 Ascension Digital Group</div></footer>'
+          if old in s: s=s.replace(old,new,1)
+          p.write_text(s)
+      - name: Verify
+        run: |
+          grep -q 'rs-persistent-top' app.html
+          grep -q 'RAVEN <strong>SHARP' app.html
+      - name: Commit
+        run: |
+          git config user.name 'Raven Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app.html
+          git diff --cached --quiet || git commit -m 'Keep Raven Sharp branding across Smart Cleaner auth and app'
+          git push
