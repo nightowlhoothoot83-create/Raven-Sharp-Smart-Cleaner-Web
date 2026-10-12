@@ -1,6 +1,12 @@
-# Raven Sharp Smart Cleaner Web
+# Raven Sharp AI File Manager Web
 
 Browser app and public site for cleaner.raven-sharp.com, usable on PC and phone. The mobile Expo app lives in a separate repository.
+
+## Source dashboard
+
+Device source selection and cloud connections are separate. The dashboard reads the real source-list envelope, offers per-account scan selection and status, and shows OAuth setup or reconnect errors. Google Drive and Dropbox are supported; OneDrive and Google Photos are visibly unavailable. Disconnecting here does not revoke provider permissions or delete cloud files.
+
+See FEATURE_AUDIT.md for content/Vision behavior, size/date fallbacks and engine gaps.
 
 ## Browser device scanning
 
@@ -26,9 +32,10 @@ Cloud source scans still use the existing Google Drive/Dropbox connections. OAut
 Run from the repository root:
 
     node --check device-scan.js
+    node --check source-dashboard.js
     node --test tests/device-scan.test.cjs
 
-The tests exercise full-file hashes, folder identities, upload consent, record reuse, partial failures, cancellation, safe text rendering and cloud scanning order. They use a DOM/API harness and do not substitute for real device testing.
+The 15 tests exercise source response envelopes, account selection, OAuth state validation, token clearing and full-file hashes, folder identities, upload consent, record reuse, partial failures, cancellation, safe text rendering and cloud scanning order. They use a DOM/API harness and do not substitute for real device testing.
 
 Before publishing, test on desktop and Android/iPhone browsers with a test account: select two byte-identical files at different folder paths, scan and repeat, cancel midway, opt into content analysis, inspect duplicate recommendations, remove only an internal scan record, download a renamed copy and export a review report. Verify phone file/photo pickers and folder fallback.
 

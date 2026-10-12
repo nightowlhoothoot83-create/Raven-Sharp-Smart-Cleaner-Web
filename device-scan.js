@@ -137,13 +137,19 @@
     list.replaceChildren();
     el("export-report").disabled = !groups.length;
     if (!groups.length) {
-      list.append(node("p", "No duplicate groups found in the scanned records.", "empty-state"));
+      list.append(node("p", "No matching file or version groups found in the scanned records.", "empty-state"));
       return;
     }
     for (const group of groups) {
       const card = node("div", undefined, "group-card");
       card.append(node("div", text(group.kind).replace(/_/g, " "), "kind"));
       card.append(node("p", group.reason || "Compare these files before deciding what to keep.", "reason"));
+      const evidence = group.vision_used === true ? "Claude Vision inspected available cloud images"
+        : group.kind === "exact_duplicate" ? "Matching file fingerprints"
+        : group.kind === "visually_similar" || group.vision_used === false ? "Photo similarity fingerprints · Vision not used"
+        : (group.files || []).some(f => f.text_preview) ? "Document text comparison · see recommendation for any fallback"
+        : "Filename / size / date comparison · no document content available";
+      card.append(node("p", evidence, "scan-help"));
       for (const file of group.files || []) {
         if (file.source === "internal" && file.external_id?.startsWith("web:")) {
           const original = selected.get(file.external_id.slice(4));
@@ -151,7 +157,7 @@
         }
         const keep = file.id === group.keep_id;
         const row = node("div", undefined, "file-item " + (keep ? "keep" : "review"));
-        row.append(node("span", (keep ? "Suggested keep: " : "Review: ") + file.name));
+        row.append(node("span", (keep ? group.kind === "exact_duplicate" ? "Representative exact copy: " : "Suggested keep: " : "Review: ") + file.name));
         row.append(node("span", fmtBytes(file.size)));
         row.append(node("span", file.source === "internal" ? "Device scan" : file.source, "badge"));
         if (!keep && file.source === "internal") {
@@ -217,7 +223,7 @@
     el("scan-status").textContent = "";
     el("content-analysis").checked = false;
     el("device-progress").classList.add("hidden");
-    el("groups-list").replaceChildren(node("p", "Run a scan to find duplicates.", "empty-state"));
+    el("groups-list").replaceChildren(node("p", "Run a scan to compare files and versions.", "empty-state"));
     el("rename-list").replaceChildren();
     el("export-report").disabled = true;
     busy = false; renderSelection();
@@ -229,20 +235,31 @@
     const signal = controller.signal;
     setBusy(true);
     try {
-      const sources = await api("/sources", { signal });
-      const supported = sources.filter(s => ["gdrive", "dropbox"].includes(s.type));
+      const payload = await api("/sources", { signal });
+      const sources = window.SourceDashboard ? SourceDashboard.normalize(payload) : Array.isArray(payload) ? payload : payload.sources || [];
+      const supported = window.SourceDashboard ? SourceDashboard.selectedSources(sources) : sources.filter(s => ["gdrive", "dropbox"].includes(s.type));
       if (!supported.length) {
-        el("scan-status").textContent = "Connect Google Drive or Dropbox first, or choose device files above.";
+        el("scan-status").textContent = "Select a connected Google Drive or Dropbox account first, or choose device files above.";
         return;
       }
+      let failed = 0;
       for (const source of supported) {
         cancelled(signal);
         el("scan-status").textContent = "Scanning " + source.label + "…";
-        await api("/scan/" + source.type + "/" + encodeURIComponent(source.id), { method: "POST", signal });
+        try {
+          await api("/scan/" + source.type + "/" + encodeURIComponent(source.id), { method: "POST", signal });
+          window.SourceDashboard?.status(source.id, "Scan completed");
+        } catch (error) {
+          if (signal.aborted || !token) throw error;
+          failed++;
+          window.SourceDashboard?.status(source.id, "Scan failed — reconnect if access expired: " + error.message, true);
+        }
       }
       el("scan-status").textContent = "Comparing files…";
       await refreshAnalysis(signal);
-      el("scan-status").textContent = "Cloud scan complete. Review results below.";
+      el("scan-status").textContent = failed
+        ? failed + " accounts failed; results may include earlier scan records. Review account status and results below."
+        : "Selected cloud scans complete. Review results below.";
     } catch (error) {
       if (runGeneration === generation) el("scan-status").textContent = signal.aborted ? "Cloud scan stopped. Completed records remain in your account." : "Cloud scan failed: " + error.message;
     } finally {

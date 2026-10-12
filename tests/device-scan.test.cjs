@@ -10,13 +10,15 @@ class Element {
   addEventListener(event, fn) { this.handlers[event] = fn; }
   click() { return this.handlers.click?.(); }
   remove() {}
+  setAttribute(name, value) { this[name] = value; }
 }
 function harness(apiImpl = async () => ({})) {
   const elements = new Map();
   const document = { getElementById(id) { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); }, createElement(tag) { return new Element(tag); }, body: new Element() };
   document.getElementById('device-folder').webkitdirectory = true;
   const calls = [];
-  const context = vm.createContext({ document, crypto: webcrypto, Uint8Array, Map, Blob, FormData, AbortController, DOMException, Date, JSON, console, token: 'session', confirm: () => true, URL, setTimeout: () => {}, fmtBytes: n => String(n), toast: () => {}, loadStats: async () => {}, api: async (path, options = {}) => { calls.push({ path, options }); return apiImpl(path, options); } });
+  const storage = new Map();
+  const context = vm.createContext({ document, URLSearchParams, sessionStorage: {getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}, history:{replaceState(){}}, location:{origin:'https://cleaner.raven-sharp.com',pathname:'/app.html',hash:'',search:''}, crypto: webcrypto, Uint8Array, Map, Blob, FormData, AbortController, DOMException, Date, JSON, console, token: 'session', confirm: () => true, URL, setTimeout: () => {}, fmtBytes: n => String(n), toast: () => {}, loadStats: async () => {}, api: async (path, options = {}) => { calls.push({ path, options }); return apiImpl(path, options); } });
   context.window = context;
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '..', 'device-scan.js'), 'utf8'), context);
   return { context, cleaner: context.Cleaner, calls, el: id => document.getElementById(id) };
@@ -76,10 +78,10 @@ test('untrusted filenames render as text and cloud records have no delete action
   const h = harness(); const malicious = '<img src=x onerror=alert(1)>';
   h.cleaner.renderGroups([{kind:'exact_duplicate',keep_id:'keep',reason:malicious,files:[{id:'other',name:malicious,source:'gdrive',size:2}]}]);
   const card = h.el('groups-list').children[0]; assert.equal(card.children[1].textContent, malicious);
-  const row = card.children[2]; assert.ok(row.children.some(c => c.textContent.includes(malicious))); assert.ok(!row.children.some(c => c.tagName === 'button'));
+  const row = card.children[3]; assert.ok(row.children.some(c => c.textContent.includes(malicious))); assert.ok(!row.children.some(c => c.tagName === 'button'));
 });
 test('cloud scan invokes source scanning before analysis', async () => {
-  const h = harness(async path => path === '/sources' ? [{type:'gdrive',id:'drive',label:'Drive'}] : {duplicate_groups:[],candidates:[]});
+  const h = harness(async path => path === '/sources' ? {sources:[{type:'gdrive',id:'drive',label:'Drive'}]} : {duplicate_groups:[],candidates:[]});
   await h.cleaner.scanCloud(); assert.deepEqual(h.calls.map(c=>c.path), ['/sources','/scan/gdrive/drive','/scan/analyze','/scan/rename-candidates']);
 });
 test('metadata scans reuse earlier content uploads instead of introducing false duplicates', async () => {
@@ -96,8 +98,48 @@ test('oversized files are skipped before attempting to read or upload', async ()
 test('removing an internal scan record requires confirmation and calls only its account record route', async () => {
   const h = harness(async()=>({duplicate_groups:[]}));
   h.cleaner.renderGroups([{kind:'exact_duplicate',keep_id:'keep',files:[{id:'local',source:'internal',name:'a.txt',size:1}]}]);
-  const button = h.el('groups-list').children[0].children[2].children.find(c=>c.tagName==='button');
+  const button = h.el('groups-list').children[0].children[3].children.find(c=>c.tagName==='button');
   h.context.confirm = () => false; await button.click(); assert.equal(h.calls.length,0);
   h.context.confirm = message => {assert.match(message,/NOT be deleted/);return true;}; await button.click();
   assert.equal(h.calls[0].path,'/files/local'); assert.equal(h.calls[0].options.method,'DELETE');
+});
+
+function sourcesHarness(apiImpl) {
+ const h = harness(apiImpl);
+ vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '..', 'source-dashboard.js'), 'utf8'), h.context);
+ return h;
+}
+test('dashboard displays backend source envelopes and retains deselection on refresh', async () => {
+ const h = sourcesHarness(async()=>({sources:[{id:'drive',type:'gdrive',label:'Work drive'},{id:'one',type:'onedrive',label:'OneDrive'}]}));
+ await h.context.SourceDashboard.load();
+ const list=h.el('sources-list');assert.equal(list.children.length,2);
+ const input=list.children[0].children[0].children[0];assert.equal(input.checked,true);
+ assert.equal(list.children[1].children[0].children[0].disabled,true);
+ input.checked=false;input.handlers.change();await h.context.SourceDashboard.load();
+ assert.equal(h.context.SourceDashboard.selectedSources({sources:[{id:'drive',type:'gdrive'}]}).length,0);
+});
+test('cloud scanning honors dashboard selection and displays partial failures', async()=>{
+ const h=sourcesHarness(async path=>{
+  if(path==='/sources')return {sources:[{id:'a',type:'gdrive',label:'A'},{id:'b',type:'dropbox',label:'B'}]};
+  if(path==='/scan/gdrive/a')throw new Error('Expired token');
+  return {duplicate_groups:[],candidates:[]};
+ });
+ await h.context.SourceDashboard.load();await h.cleaner.scanCloud();
+ assert.ok(h.calls.some(c=>c.path==='/scan/dropbox/b'));assert.match(h.el('scan-status').textContent,/1 accounts failed/);
+ const checkbox=h.el('sources-list').children[0].children[0].children[0];checkbox.checked=false;checkbox.handlers.change();
+ h.calls.length=0;await h.cleaner.scanCloud();assert.ok(!h.calls.some(c=>c.path==='/scan/gdrive/a'));
+});
+test('provider sign-in uses nonce state and rejects unmatched callbacks',async()=>{
+ const h=sourcesHarness(async()=>({sources:[]}));h.context.SMART_CLEANER_GOOGLE_CLIENT_ID='configured.apps.googleusercontent.com';
+ h.context.SourceDashboard.connect('gdrive');
+ const query=new URL(h.context.location.href).searchParams;
+ assert.notEqual(query.get('state'),'gdrive');assert.equal(query.get('scope'),'https://www.googleapis.com/auth/drive.readonly');
+ h.context.location.hash='#access_token=private-token&state=wrong';await h.context.SourceDashboard.callback();
+ assert.equal(h.calls.length,0);assert.match(h.el('connection-status').textContent,/could not be verified/);
+});
+test('manual connections validate through API and clear entered credentials',async()=>{
+ const h=sourcesHarness(async()=>({sources:[]}));h.el('connect-token').value='secret';
+ await h.context.SourceDashboard.save('dropbox','secret','Work');
+ const call=h.calls.find(c=>c.path==='/sources/dropbox');assert.equal(JSON.parse(call.options.body).access_token,'secret');
+ assert.equal(h.el('connect-token').value,'');
 });
