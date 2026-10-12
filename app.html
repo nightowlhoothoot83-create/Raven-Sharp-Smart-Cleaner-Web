@@ -31,6 +31,20 @@
   button.ghost:hover { border-color: var(--purple); background: var(--surface); }
   button.danger { background: var(--danger); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .scan-actions { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; }
+  .scan-help { color:var(--muted); font-size:.88rem; line-height:1.6; margin:12px 0; }
+  .scan-consent { display:flex; gap:10px; align-items:flex-start; font-size:.88rem; line-height:1.5; }
+  .scan-consent input { width:20px; height:20px; flex-shrink:0; margin-top:2px; }
+  .selection-list { padding-left:24px; color:var(--muted); font-size:.85rem; overflow-wrap:anywhere; }
+  progress { width:100%; height:16px; margin-top:12px; accent-color:var(--purple-glow); }
+  .scan-errors { color:var(--danger); padding-left:20px; font-size:.85rem; overflow-wrap:anywhere; }
+  .file-item { gap:12px; flex-wrap:wrap; }
+  .file-item span:first-child { flex:1; min-width:140px; overflow-wrap:anywhere; }
+  .file-item.review { color:var(--text); }
+  .file-item button { padding:8px 12px; font-size:.8rem; }
+  .rename-row { padding:12px 0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
+  body:has(#app-screen.active) .rs-persistent-top { display:none; }
+  @media(max-width:560px) { main { padding:20px 12px 40px; } section.panel { padding:16px; } .scan-actions button { flex:1 1 140px; } nav.topbar { padding:10px 12px; } }
 
   /* ── Auth screen ── */
   #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px; background:radial-gradient(circle at 20% 20%,rgba(124,92,191,.2),transparent 34%),radial-gradient(circle at 85% 20%,rgba(56,189,248,.12),transparent 30%); }
@@ -178,17 +192,50 @@ nav.topbar .brand{display:flex;align-items:center;gap:12px}nav.topbar .brand img
     </section>
 
     <section class="panel">
-      <h2>Scan</h2>
+      <h2>Scan files from this device</h2>
       <p style="color:var(--muted);font-size:0.88rem;margin-bottom:14px">
-        Scans every connected source, finds duplicates by looking at actual content (not just filenames), and suggests better names for generic files.
+        On your PC or phone, choose files, photos or a folder such as Downloads, Documents or Pictures. Only your selection is scanned.
       </p>
+      <div class="scan-actions">
+        <button id="choose-files" type="button">Choose files</button>
+        <button id="choose-photos" type="button">Choose photos &amp; videos</button>
+        <button id="choose-folder" type="button" class="ghost">Choose folder</button>
+      </div>
+      <input id="device-files" type="file" multiple hidden>
+      <input id="device-photos" type="file" multiple accept="image/*,video/*" hidden>
+      <input id="device-folder" type="file" multiple webkitdirectory hidden>
+      <p id="folder-help" class="scan-help">Folder selection depends on your browser. If it is unavailable on your phone, use Choose files or Choose photos &amp; videos. Files over 128 MB are skipped to protect browser memory.</p>
+      <label class="scan-consent"><input id="content-analysis" type="checkbox"> Include content analysis: send selected files up to 25 MB each to Smart Cleaner for text and photo comparison. Larger files use exact matching only.</label>
+      <p class="scan-help">By default, file contents stay on your device. File names, sizes and full-file fingerprints are sent to your account for exact matching. Scanning never deletes or renames your originals.</p>
+      <p id="selection-summary" class="scan-help">No files selected.</p>
+      <ol id="selection-list" class="selection-list"></ol>
+      <div class="scan-actions">
+        <button id="device-scan-btn" type="button" disabled>Scan selected files</button>
+        <button id="cancel-scan" type="button" class="ghost hidden">Stop scan</button>
+        <button id="clear-selection" type="button" class="ghost" disabled>Clear selection</button>
+      </div>
+      <progress id="device-progress" value="0" max="1" class="hidden"></progress>
+      <p id="device-status" role="status" aria-live="polite" class="scan-help"></p>
+      <ul id="scan-errors" class="scan-errors"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>Scan connected cloud sources</h2>
+      <p class="scan-help">Scan connected Google Drive and Dropbox accounts, then review matching files alongside your device scans.</p>
       <button id="scan-btn" onclick="runScan()">Scan All Sources</button>
       <span id="scan-status" style="margin-left:12px;color:var(--muted);font-size:0.88rem"></span>
     </section>
 
     <section class="panel">
       <h2>Duplicate Groups</h2>
+      <p class="scan-help">Recommendations are for review. For device files, remove an original using your device's file manager. Removing a scan record here does not free device storage.</p>
       <div id="groups-list"><div class="empty-state">Run a scan to find duplicates.</div></div>
+      <button id="export-report" class="ghost" type="button" disabled>Download review report</button>
+    </section>
+    <section class="panel">
+      <h2>Filename suggestions</h2>
+      <p class="scan-help">Review suggested names. For a file selected in this session, you can download a renamed copy; your original stays unchanged.</p>
+      <div id="rename-list"><p class="scan-help">Suggestions appear after a scan when available.</p></div>
     </section>
   </main>
 </div>
@@ -196,6 +243,7 @@ nav.topbar .brand{display:flex;align-items:center;gap:12px}nav.topbar .brand img
 <div id="toast" class="toast hidden"></div>
 
 <footer class="rs-cleaner-footer"><b style="display:block;color:#fff;font-size:16px;margin-bottom:5px">Ascension Digital Group</b><div>Raven Sharp Smart Cleaner</div><nav class="suite" aria-label="Raven Sharp suite"><a href="https://raven-sharp.com">Raven Sharp Home</a><a href="https://pod.raven-sharp.com">POD Automation</a><a href="https://opt.raven-sharp.com">Image Optimiser</a><a href="https://books.raven-sharp.com">Book Creator</a><a href="https://content.raven-sharp.com">Content Creator</a><a href="https://ads.raven-sharp.com">Ad Manager</a><a href="https://cleaner.raven-sharp.com">Smart Cleaner</a></nav><div>© 2026 Ascension Digital Group</div></footer>
+<script src="/device-scan.js"></script>
 <script>
 const API_BASE = (window.SMART_CLEANER_API_URL || "https://raven-sharp-smart-ai-cleaner-production.up.railway.app") + "/api";
 let authMode = "login";
@@ -209,7 +257,7 @@ function toast(msg) {
 }
 
 async function api(path, opts = {}) {
-  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  const headers = { ...(opts.body instanceof FormData ? {} : { "Content-Type": "application/json" }), ...(opts.headers || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   if (res.status === 401) { logout(); throw new Error("Session expired — please log in again"); }
@@ -252,6 +300,7 @@ document.getElementById("auth-submit").addEventListener("click", async () => {
 });
 
 function logout() {
+  Cleaner.reset();
   token = null;
   localStorage.removeItem("sc_token");
   document.getElementById("app-screen").classList.remove("active");
@@ -373,12 +422,16 @@ async function loadSources() {
       el.innerHTML = `<div class="empty-state">No sources connected yet.</div>`;
       return;
     }
-    el.innerHTML = sources.map(s => `
-      <div class="source-row">
-        <div><span class="badge">${s.type}</span>${s.label}</div>
-        <button class="ghost" onclick="disconnectSource('${s.id}')">Remove</button>
-      </div>
-    `).join("");
+    el.replaceChildren();
+    for (const source of sources) {
+      const row = document.createElement("div"); row.className = "source-row";
+      const label = document.createElement("div"); label.textContent = source.label;
+      const badge = document.createElement("span"); badge.className = "badge"; badge.textContent = source.type;
+      label.prepend(badge);
+      const remove = document.createElement("button"); remove.className = "ghost"; remove.textContent = "Remove";
+      remove.addEventListener("click", () => disconnectSource(source.id));
+      row.append(label, remove); el.append(row);
+    }
   } catch (e) { toast(e.message); }
 }
 
@@ -390,53 +443,13 @@ async function disconnectSource(id) {
   } catch (e) { toast(e.message); }
 }
 
-async function runScan() {
-  const btn = document.getElementById("scan-btn");
-  const status = document.getElementById("scan-status");
-  btn.disabled = true;
-  try {
-    const sources = await api("/sources");
-    for (const s of sources) {
-      if (s.type !== "gdrive" && s.type !== "dropbox") continue; // onedrive/gphotos scan endpoints not built yet
-      status.textContent = `Scanning ${s.label}...`;
-      await api(`/scan/${s.type}/${s.id}`, { method: "POST" });
-    }
-    status.textContent = "Analyzing for duplicates...";
-    const result = await api("/scan/analyze", { method: "POST" });
-    renderGroups(result.duplicate_groups || []);
-    status.textContent = "Done";
-    await loadStats();
-    setTimeout(() => status.textContent = "", 3000);
-  } catch (e) {
-    toast(e.message);
-    status.textContent = "";
-  } finally {
-    btn.disabled = false;
-  }
-}
+async function runScan() { await Cleaner.scanCloud(); }
 
-function renderGroups(groups) {
-  const el = document.getElementById("groups-list");
-  if (!groups.length) {
-    el.innerHTML = `<div class="empty-state">No duplicates found. Your files are clean.</div>`;
-    return;
-  }
-  el.innerHTML = groups.map(g => `
-    <div class="group-card">
-      <div class="kind">${g.kind.replace(/_/g, " ")}</div>
-      <div class="reason">${g.reason || ""}</div>
-      ${g.files.map(f => `
-        <div class="file-item ${f.id === g.keep_id ? 'keep' : 'discard'}">
-          <span>${f.id === g.keep_id ? '✓ KEEP — ' : '✗ '}${f.name}</span>
-          <span>${fmtBytes(f.size)}</span>
-        </div>
-      `).join("")}
-    </div>
-  `).join("");
-}
+function renderGroups(groups) { Cleaner.renderGroups(groups); }
 
 // Restore session on load, then process any OAuth redirect callback
 if (token) { showApp().then(handleOAuthCallback); } else { setAuthMode("login"); handleOAuthCallback(); }
 </script>
 </body>
 </html>
+
