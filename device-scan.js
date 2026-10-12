@@ -50,17 +50,18 @@
     if (signal.aborted) throw new DOMException("Scan stopped", "AbortError");
   }
   async function refreshAnalysis(signal) {
-    const result = await api("/scan/analyze", { method: "POST", signal });
+    const result = await api("/scan/analyze?basic_only=true", { method: "POST", signal });
     cancelled(signal);
     renderGroups(result.duplicate_groups || []);
     await loadStats();
-    try {
-      const names = await api("/scan/rename-candidates", { signal });
+    if (window.ContentCleanup) {
+      const records = await api("/files", { signal });
       cancelled(signal);
-      renderRenames(names.candidates || []);
-    } catch (error) {
-      if (signal.aborted) throw error;
-      el("rename-list").replaceChildren(node("p", "Filename suggestions unavailable: " + error.message, "scan-help"));
+      for (const record of records.files || []) {
+        const original = record.external_id?.startsWith("web:") ? selected.get(record.external_id.slice(4)) : null;
+        if (original) localFiles.set(record.id, original);
+      }
+      ContentCleanup.setFiles(records.files || [], result.duplicate_groups || []);
     }
   }
   async function scanSelected() {
@@ -97,10 +98,11 @@
               record = await api("/files/upload", { method: "POST", body: form, signal });
               uploaded.set(identity, record);
           } else if (!record) {
-            await api("/files/register", { method: "POST", signal, body: JSON.stringify({ items: [{
+            const registered = await api("/files/register", { method: "POST", signal, body: JSON.stringify({ items: [{
               name: pathOf(file), size: file.size, mime_type: file.type, sha256,
               external_id, created_at: new Date(file.lastModified || Date.now()).toISOString()
             }] }) });
+            record = registered.records?.[0];
           }
           cancelled(signal);
           // Resolve registered IDs after the batch; uploaded records return an ID.
@@ -170,7 +172,7 @@
               await api("/files/" + encodeURIComponent(file.id), { method: "DELETE" });
               localFiles.delete(file.id);
               // Removing a record is account-only for internal files.
-              const result = await api("/scan/analyze", { method: "POST" });
+              const result = await api("/scan/analyze?basic_only=true", { method: "POST" });
               renderGroups(result.duplicate_groups || []);
               await loadStats();
             } catch (error) { toast(error.message); remove.disabled = false; }
@@ -189,31 +191,19 @@
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
-  function renderRenames(files) {
-    if (!token) return;
-    const list = el("rename-list");
-    list.replaceChildren();
-    if (!files.length) list.append(node("p", "No filename suggestions available. Content analysis can provide more useful document suggestions.", "scan-help"));
-    for (const file of files) {
-      const row = node("div", undefined, "rename-row");
-      row.append(node("p", file.name + " → " + file.ai_suggested_name));
-      const original = localFiles.get(file.id);
-      if (original) {
-        const button = node("button", "Download renamed copy", "ghost");
-        button.type = "button";
-        button.addEventListener("click", () => {
-          const extension = original.name.includes(".") ? "." + original.name.split(".").pop() : "";
-          let name = text(file.ai_suggested_name).replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/^\.+/, "").slice(0, 150) || "renamed-file";
-          if (extension && !name.toLowerCase().endsWith(extension.toLowerCase())) name += extension;
-          download(original, name);
-        });
-        row.append(button);
-      } else row.append(node("p", "Rename the original in your device's file manager or cloud account.", "scan-help"));
+  function renderRenames(records) {
+    const list = el("rename-list"); list.replaceChildren();
+    if (!records.length) list.append(node("p", "Run content cleanup to get inspected, editable filename suggestions.", "scan-help"));
+    for (const file of records) {
+      const row = node("div", undefined, "rename-row"); row.append(node("p", file.name));
+      if (window.ContentCleanup) row.append(ContentCleanup.editableRename(file, file.ai_suggested_name, localFiles.get(file.id)));
+      else row.append(node("p", file.ai_suggested_name || "Review a name manually.", "scan-help"));
       list.append(row);
     }
   }
   function reset() {
     generation++;
+    window.ContentCleanup?.reset();
     controller?.abort();
     controller = null;
     selected.clear(); localFiles.clear(); groups = [];
@@ -273,12 +263,12 @@
   });
   el("clear-selection").addEventListener("click", () => { selected.clear(); renderSelection(); });
   el("device-scan-btn").addEventListener("click", scanSelected);
-  el("cancel-scan").addEventListener("click", () => controller?.abort());
+  el("cancel-scan").addEventListener("click", () => { controller?.abort(); window.ContentCleanup?.cancel(); });
   el("export-report").addEventListener("click", () => download(new Blob([JSON.stringify({
     created_at: new Date().toISOString(),
     note: "Recommendations only. No original device files have been deleted or renamed.",
-    duplicate_groups: groups
+    duplicate_groups: groups, content_review: window.ContentCleanup?.report() || []
   }, null, 2)], { type: "application/json" }), "smart-cleaner-review.json"));
-  window.Cleaner = { renderGroups, renderRenames, reset, hashFile, selectFiles, scanSelected, scanCloud, isBusy: () => busy };
+  window.Cleaner = { renderGroups, renderRenames, reset, hashFile, selectFiles, scanSelected, scanCloud, getLocalFile: id => localFiles.get(id), download, setReviewBusy: setBusy, isBusy: () => busy };
   setBusy(false);
 })();

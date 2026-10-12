@@ -95,7 +95,7 @@
     const redirect = window.location.origin + window.location.pathname;
     sessionStorage.setItem("file-manager-oauth", JSON.stringify({ state, type, created: Date.now() }));
     const query = new URLSearchParams({ client_id: window[provider.key], redirect_uri: redirect, response_type: "token", state });
-    if (type === "gdrive") { query.set("scope", "https://www.googleapis.com/auth/drive.readonly"); query.set("prompt", "consent"); }
+    if (type === "gdrive") { query.set("scope", "https://www.googleapis.com/auth/drive"); query.set("prompt", "consent"); }
     window.location.href = (type === "gdrive" ? "https://accounts.google.com/o/oauth2/v2/auth?" : "https://www.dropbox.com/oauth2/authorize?") + query;
   }
   async function callback() {

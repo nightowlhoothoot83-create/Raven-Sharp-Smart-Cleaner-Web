@@ -38,9 +38,9 @@ test('selection retains separate folder paths and avoids picking the same file t
   h.cleaner.selectFiles([a, a, b]); assert.match(h.el('selection-summary').textContent, /^2 files/);
 });
 test('default scan registers full hashes without uploading content, then compares', async () => {
-  const h = harness(async path => path === '/scan/analyze' ? { duplicate_groups: [] } : { candidates: [] });
+  const h = harness(async path => path === '/scan/analyze?basic_only=true' ? { duplicate_groups: [] } : { candidates: [] });
   h.cleaner.selectFiles([file('a.txt', 'hello')]); await h.cleaner.scanSelected();
-  assert.deepEqual(h.calls.map(c => c.path), ['/files', '/files/register', '/scan/analyze', '/scan/rename-candidates']);
+  assert.deepEqual(h.calls.map(c => c.path), ['/files', '/files/register', '/scan/analyze?basic_only=true']);
   const item = JSON.parse(h.calls[1].options.body).items[0];
   assert.equal(item.sha256, createHash('sha256').update('hello').digest('hex')); assert.match(item.external_id, /^web:/);
   assert.equal(h.el('device-scan-btn').disabled, false);
@@ -49,7 +49,7 @@ test('opt-in content upload uses multipart; a repeated existing file is reused',
   let existing = []; const h = harness(async path => {
     if (path === '/files') return { files: existing };
     if (path === '/files/upload') return { id: 'uploaded' };
-    if (path === '/scan/analyze') return { duplicate_groups: [] };
+    if (path === '/scan/analyze?basic_only=true') return { duplicate_groups: [] };
     return { candidates: [] };
   });
   h.el('content-analysis').checked = true; h.cleaner.selectFiles([file('a.txt', 'hello')]); await h.cleaner.scanSelected();
@@ -71,7 +71,7 @@ test('stopping a scan prevents analysis and logout clears file references', asyn
   h.cleaner.selectFiles([file('a.txt', 'abc')]); const task = h.cleaner.scanSelected();
   while (!h.calls.some(c => c.path === '/files/register')) await new Promise(r => setImmediate(r));
   h.el('cancel-scan').click(); resolve(); await task;
-  assert.ok(!h.calls.some(c => c.path === '/scan/analyze')); assert.match(h.el('device-status').textContent, /Scan stopped/);
+  assert.ok(!h.calls.some(c => c.path === '/scan/analyze?basic_only=true')); assert.match(h.el('device-status').textContent, /Scan stopped/);
   h.cleaner.reset(); assert.equal(h.el('selection-summary').textContent, 'No files selected.');
 });
 test('untrusted filenames render as text and cloud records have no delete action', () => {
@@ -82,7 +82,7 @@ test('untrusted filenames render as text and cloud records have no delete action
 });
 test('cloud scan invokes source scanning before analysis', async () => {
   const h = harness(async path => path === '/sources' ? {sources:[{type:'gdrive',id:'drive',label:'Drive'}]} : {duplicate_groups:[],candidates:[]});
-  await h.cleaner.scanCloud(); assert.deepEqual(h.calls.map(c=>c.path), ['/sources','/scan/gdrive/drive','/scan/analyze','/scan/rename-candidates']);
+  await h.cleaner.scanCloud(); assert.deepEqual(h.calls.map(c=>c.path), ['/sources','/scan/gdrive/drive','/scan/analyze?basic_only=true']);
 });
 test('metadata scans reuse earlier content uploads instead of introducing false duplicates', async () => {
   const h = harness(async path => path === '/files' ? {files:[{id:'old',source:'internal',name:'a.txt',size:5,sha256:createHash('sha256').update('hello').digest('hex')}]} : {duplicate_groups:[],candidates:[]});
@@ -133,7 +133,7 @@ test('provider sign-in uses nonce state and rejects unmatched callbacks',async()
  const h=sourcesHarness(async()=>({sources:[]}));h.context.SMART_CLEANER_GOOGLE_CLIENT_ID='configured.apps.googleusercontent.com';
  h.context.SourceDashboard.connect('gdrive');
  const query=new URL(h.context.location.href).searchParams;
- assert.notEqual(query.get('state'),'gdrive');assert.equal(query.get('scope'),'https://www.googleapis.com/auth/drive.readonly');
+ assert.notEqual(query.get('state'),'gdrive');assert.equal(query.get('scope'),'https://www.googleapis.com/auth/drive');
  h.context.location.hash='#access_token=private-token&state=wrong';await h.context.SourceDashboard.callback();
  assert.equal(h.calls.length,0);assert.match(h.el('connection-status').textContent,/could not be verified/);
 });
@@ -142,4 +142,29 @@ test('manual connections validate through API and clear entered credentials',asy
  await h.context.SourceDashboard.save('dropbox','secret','Work');
  const call=h.calls.find(c=>c.path==='/sources/dropbox');assert.equal(JSON.parse(call.options.body).access_token,'secret');
  assert.equal(h.el('connect-token').value,'');
+});
+function cleanupHarness(apiImpl) {
+ const h=sourcesHarness(apiImpl);
+ vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'..','content-cleanup.js'),'utf8'),h.context);
+ return h;
+}
+test('content cleanup requires consent and reports content coverage without mutating files',async()=>{
+ const h=cleanupHarness(async path=> path==='/scan/content-review'?{recommendations:[{file:{id:'f',name:'IMG_1.png',source:'internal'},action:'review',flags:['blurry'],reason:'May be unique',evidence:'unavailable',suggested_name:null}]}:{});
+ h.context.ContentCleanup.setFiles([{id:'f',name:'IMG_1.png',source:'internal'}],[]);
+ await h.context.ContentCleanup.run();assert.equal(h.calls.length,0);
+ h.el('review-consent').checked=true;await h.context.ContentCleanup.run();
+ assert.equal(h.calls[0].path,'/scan/content-review');assert.equal(JSON.parse(h.calls[0].options.body).approved_content_processing,true);
+ assert.ok(!h.calls.some(c=>c.options.method==='DELETE'||c.path.includes('/rename')));
+});
+test('manual filename edits require confirmation and the approved name is sent exactly',async()=>{
+ const h=cleanupHarness(async()=>({renamed:true}));
+ const editor=h.context.ContentCleanup.editableRename({id:'cloud',name:'IMG_1.png',source:'gdrive'},'suggested.png',null);
+ const input=editor.children.find(c=>c.tagName==='input');input.value='my-manual-name.png';
+ const button=editor.children.find(c=>c.tagName==='button');h.context.confirm=()=>false;await button.click();assert.equal(h.calls.length,0);
+ h.context.confirm=()=>true;await button.click();assert.equal(JSON.parse(h.calls[0].options.body).new_name,'my-manual-name.png');
+});
+test('basic duplicates exclude extra exact copies while keeping one for content version comparison',()=>{
+ const h=cleanupHarness(async()=>({}));const files=[{id:'a',name:'old.txt'},{id:'b',name:'old-copy.txt'},{id:'c',name:'final.txt'}];
+ h.context.ContentCleanup.setFiles(files,[{kind:'exact_duplicate',keep_id:'a',files:files.slice(0,2)}]);
+ assert.equal(h.el('content-candidates').children.length,2);
 });
