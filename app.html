@@ -129,6 +129,12 @@ nav.topbar .brand{display:flex;align-items:center;gap:12px}nav.topbar .brand img
 </head>
 <body>
 <header class="rs-persistent-top"><img src="/brands/ravenSharpLogo.png" alt="Raven Sharp"><div class="rs-persistent-brand">RAVEN <strong>SHARP</strong><small>AI File Manager</small></div></header>
+<details style="max-width:1100px;margin:16px auto;padding:16px;border:1px solid var(--border);border-radius:12px">
+  <summary>Connection check — test what is ready</summary>
+  <p class="scan-help">Check the file service and content review before starting. This check does not change your files.</p>
+  <button id="check-connections" type="button" class="ghost">Check connections</button>
+  <p id="connection-check-result" class="scan-help" role="status" aria-live="polite">Run a check to see current availability.</p>
+</details>
 
 <!-- ═══ AUTH SCREEN ═══ -->
 <div id="auth-screen">
@@ -283,8 +289,9 @@ nav.topbar .brand{display:flex;align-items:center;gap:12px}nav.topbar .brand img
 <script src="/device-scan.js"></script>
 <script src="/source-dashboard.js"></script>
 <script src="/content-cleanup.js"></script>
+<script src="/connection-check.js" defer></script>
 <script>
-const API_BASE = (window.SMART_CLEANER_API_URL || "https://raven-sharp-smart-ai-cleaner-production.up.railway.app") + "/api";
+const API_BASE = window.SMART_CLEANER_API_URL ? window.SMART_CLEANER_API_URL.replace(/\/$/, "") + "/api" : "/api";
 let authMode = "login";
 let token = localStorage.getItem("sc_token");
 
@@ -392,4 +399,5 @@ if (token) { showApp().then(handleOAuthCallback); } else { setAuthMode("login");
 </script>
 </body>
 </html>
+
 

@@ -14,6 +14,34 @@ async function withSharedFooter(response) {
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/')) {
+      const upstream = new URL('https://raven-sharp-smart-ai-cleaner-production.up.railway.app');
+      upstream.pathname = url.pathname === '/api/health' ? '/health' : url.pathname;
+      upstream.search = url.search;
+      const headers = new Headers(request.headers);
+      headers.delete('host');
+      headers.delete('cookie');
+      headers.delete('origin');
+      try {
+        const response = await fetch(new Request(upstream, {
+          method: request.method, headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+          redirect: 'manual', signal: AbortSignal.timeout(120000),
+          duplex: 'half'
+        }));
+        if (response.status >= 300 && response.status < 400) {
+          return Response.json({ detail: 'The file service returned an unexpected redirect. Please retry later.' }, { status: 502 });
+        }
+        const responseHeaders = new Headers(response.headers);
+        responseHeaders.set('Cache-Control', 'no-store');
+        responseHeaders.delete('set-cookie');
+        return new Response(response.body, { status: response.status, headers: responseHeaders });
+      } catch (error) {
+        return Response.json({ detail: 'The file service could not be reached. Check connections and try again.' }, { status: error.name === 'TimeoutError' ? 504 : 502 });
+      }
+    }
     return withSharedFooter(await env.ASSETS.fetch(request));
   }
 };
+
