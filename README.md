@@ -1,22 +1,11 @@
-# Raven Sharp AI File Manager
+# Raven Sharp AI File Manager — Web
 
-Web app for PC and phone at cleaner.raven-sharp.com. The Expo mobile app is separate.
+This is the **only active user interface**. Finish, deploy and test the web product before starting a native phone app. It works in a browser on phones and PCs and is hosted on Cloudflare Pages at cleaner.raven-sharp.com.
 
-1. Select device files/photos/folders or connect supported cloud accounts.
-2. Run basic matching without Claude. Review exact copies and related file/version groups.
-3. Select up to 12 files for content cleanup, enter keep/relevance rules and approve content processing.
-4. Review Claude's evidence, quality/version flags and keep/archive/delete candidates.
-5. Edit filename suggestions and approve individual supported actions.
+## Shared backend
 
-Device rename approval downloads a renamed copy; device originals stay unchanged. Cloud mutations require confirmation and successful provider responses. Archive suggestions are manual recommendations. Raw content previews remain request-local; account-owned recommendations are saved.
+The Python backend is in [Raven-Sharp-Smart-AI-Cleaner](https://github.com/nightowlhoothoot83-create/Raven-Sharp-Smart-AI-Cleaner), under `backend/`, and runs on Railway. Its API base is `https://raven-sharp-smart-ai-cleaner-production.up.railway.app/api`.
 
-See FEATURE_AUDIT.md for inspection coverage, source support, upload/preview bounds and remaining limitations. Release this web version with the companion Smart AI Cleaner backend PR #9, which adds /api/capabilities, /api/scan/content-review, registration IDs, basic-only analysis and fail-closed mutations.
+The old Android prototype in that repository's `frontend/` folder is paused and is not part of the web release.
 
-## Checks
-
-    node --check device-scan.js
-    node --check source-dashboard.js
-    node --check content-cleanup.js
-    node --test tests/device-scan.test.cjs
-
-The backend companion runs test_standard_matching_order.py and test_content_cleanup.py using the existing requirements. Automated checks cover source selection, consent, editable approval, model-boundary validation, ownership, unavailable content and provider failures. Live smoke tests must verify deployed endpoint versions and Claude availability separately.
+The expanded source dashboard and content review implementation is tracked in [PR #8](https://github.com/nightowlhoothoot83-create/Raven-Sharp-Smart-Cleaner-Web/pull/8). Source changes must be deployed and verified before the release is described as live.
