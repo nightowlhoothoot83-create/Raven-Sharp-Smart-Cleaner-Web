@@ -22,7 +22,7 @@
       const dropbox = Boolean(window.SMART_CLEANER_DROPBOX_APP_KEY && !window.SMART_CLEANER_DROPBOX_APP_KEY.startsWith('YOUR_'));
       result.textContent = [
         live ? 'File service: connected.' : 'File service: unavailable or timed out. Try again shortly.',
-        ready ? (ai ? 'AI content review: configured; review a small selection to test it.' : 'AI content review: API key setup needed.') : 'AI content review: waiting for the updated file service deployment.',
+        ready ? (ai ? 'AI content review: configured; review a small selection to test it.' : 'AI content review: API key setup needed.') : 'Scanning and source connections: waiting for the updated file service deployment. Login and viewing can be tested now.',
         'Google Drive sign-in: ' + (google ? 'configured.' : 'OAuth setup needed; advanced token connection is available.'),
         'Dropbox sign-in: ' + (dropbox ? 'configured.' : 'OAuth setup needed; advanced token connection is available.')
       ].join(' ');

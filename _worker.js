@@ -24,6 +24,16 @@ export default {
       headers.delete('cookie');
       headers.delete('origin');
       try {
+        const needsCurrentBackend = url.pathname.startsWith('/api/scan/') ||
+          (url.pathname.startsWith('/api/files') && !['GET', 'HEAD'].includes(request.method)) ||
+          (url.pathname.startsWith('/api/sources') && request.method === 'POST');
+        if (needsCurrentBackend) {
+          const healthResponse = await fetch('https://raven-sharp-smart-ai-cleaner-production.up.railway.app/health', { redirect: 'manual', signal: AbortSignal.timeout(15000) });
+          const health = healthResponse.ok ? await healthResponse.json() : {};
+          if (health.content_review_version !== 'v1') {
+            return Response.json({ detail: 'The updated file service is not deployed yet. Login and viewing are available; connecting sources, scanning and file changes will unlock after the backend update.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+          }
+        }
         const response = await fetch(new Request(upstream, {
           method: request.method, headers,
           body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
